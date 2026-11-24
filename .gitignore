@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# 本地运行/测试数据
+backend/tests/_tmp/
+backend/data/
+*.db

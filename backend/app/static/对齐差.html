@@ -17,7 +17,8 @@
           <a href="/">对拍台</a>
           <a href="/左轨.html">左轨流水</a>
           <a href="/右轨.html">右轨流水</a>
-          <a href="/对齐差.html" class="亮">对齐差表</a>
+          <a href="/对齐差.html">对齐差表</a>
+          <a href="/日界.html">日界切开禁跨</a>
           <a href="/悬账单.html">悬账单</a>
           <a href="/对拍结论.html">对拍结论</a>
           <a href="/源登记.html">源登记</a>
@@ -28,10 +29,11 @@
 
       <section class="行卡">
         <h1>对齐差表</h1>
-        <p class="说明">按业务键汇总左右金额。差型：对齐 / 金额不符 / 左缺 / 右缺。跑对齐会重算并重写悬账单。</p>
+        <p class="说明">按业务键汇总左右金额。差型：对齐 / 金额不符 / 左缺 / 右缺。跑对齐会重算并重写悬账单；跨日打标行带左右业务日与跨日标记，日界禁跨形态请见「日界切开禁跨」。</p>
         <div class="工具条">
           <button id="跑">跑对齐</button>
           <button class="次" id="刷">刷新</button>
+          <a class="次" href="/日界.html" style="align-self:center">去日界编排</a>
         </div>
         <pre class="报" id="报"></pre>
       </section>
@@ -45,15 +47,21 @@
   const paint = async () => {
     const rows = await get("/api/对齐差");
     document.getElementById("表").innerHTML = 表(
-      ["编号","业务键","左金额分","右金额分","差型","说明","时刻"],
+      ["编号","业务键","左业务日","右业务日","跨日","左金额分","右金额分","差型","说明","时刻"],
       rows,
-      r => `<td>${r.编号}</td><td>${r.业务键}</td><td>${r.左金额分 ?? "-"}</td><td>${r.右金额分 ?? "-"}</td>
+      r => `<td>${r.编号}</td><td>${r.业务键}</td><td>${r.左业务日 || "-"}</td><td>${r.右业务日 || "-"}</td>
+        <td>${r.跨日 ? 徽("跨日") : "-"}</td>
+        <td>${r.左金额分 ?? "-"}</td><td>${r.右金额分 ?? "-"}</td>
         <td>${徽(r.差型)}</td><td>${r.说明}</td><td>${r.时刻}</td>`
     );
   };
   await paint();
   document.getElementById("跑").onclick = async () => {
-    document.getElementById("报").textContent = JSON.stringify(await post("/api/对齐/跑"), null, 2);
+    try {
+      document.getElementById("报").textContent = JSON.stringify(await post("/api/对齐/跑"), null, 2);
+    } catch (e) {
+      document.getElementById("报").textContent = "409 锁冲突（日界编排占用）：" + e.message;
+    }
     await paint();
   };
   document.getElementById("刷").onclick = paint;

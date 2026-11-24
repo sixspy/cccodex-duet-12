@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.services import 目录, 左装载, 右装载, 对齐, 结论, 夹具, 统计, 说明
+from app.modules import 日界切开禁跨
 
 路由 = APIRouter()
 
@@ -68,6 +69,33 @@ def api_右夹(名: str):
 @路由.post("/api/对齐/跑")
 def api_对齐():
     return 对齐.跑对齐()
+
+# ---- 日界切开禁跨（邻题主链路）----
+
+@路由.post("/api/日界/跑")
+def api_日界跑():
+    try:
+        return 日界切开禁跨.跑日界对齐()
+    except 日界切开禁跨.日界冲突 as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+@路由.get("/api/日界")
+def api_日界列表(键: str | None = None):
+    # 单键视图走查询参数：根 StaticFiles 挂载会吞掉未匹配的动态中文路径
+    return 日界切开禁跨.日界单键(键) if 键 else 日界切开禁跨.日界列表()
+
+@路由.get("/api/日界策略")
+def api_日界策略():
+    return {"策略键": 日界切开禁跨.策略键, "策略": 日界切开禁跨.当前策略()}
+
+@路由.post("/api/日界策略")
+def api_改日界策略(体: dict):
+    值 = 体.get("策略")
+    try:
+        return 日界切开禁跨.改策略(值)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 
 @路由.post("/api/对拍结论/跑")
 def api_结论():

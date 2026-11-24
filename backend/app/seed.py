@@ -39,7 +39,28 @@ CREATE TABLE IF NOT EXISTS 对齐差 (
   右金额分 INTEGER,
   差型 TEXT NOT NULL,
   说明 TEXT NOT NULL DEFAULT '',
+  时刻 TEXT NOT NULL,
+  左业务日 TEXT NOT NULL DEFAULT '',
+  右业务日 TEXT NOT NULL DEFAULT '',
+  跨日 INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS 日界旁路凭证 (
+  凭证号 TEXT PRIMARY KEY,
+  业务键 TEXT NOT NULL,
+  悬边 TEXT NOT NULL,
+  左业务日 TEXT NOT NULL,
+  右业务日 TEXT NOT NULL,
+  左金额分 INTEGER NOT NULL,
+  右金额分 INTEGER NOT NULL,
+  差型 TEXT NOT NULL,
+  原因 TEXT NOT NULL DEFAULT '',
   时刻 TEXT NOT NULL
+
+);
+CREATE TABLE IF NOT EXISTS 对齐锁 (
+  锁键 TEXT PRIMARY KEY,
+  持有者 TEXT NOT NULL,
+  取得时 TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS 悬账单 (
   编号 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +97,16 @@ def 此刻() -> str:
 def 初始化库() -> None:
     conn = 连接()
     conn.executescript(建表)
+    # 旧库迁移：补齐日界切开禁跨新增列（新库建表已含，重复列忽略）
+    已有列 = {r["name"] for r in conn.execute("PRAGMA table_info(对齐差)").fetchall()}
+    for 列, 定义 in (
+        ("左业务日", "TEXT NOT NULL DEFAULT ''"),
+        ("右业务日", "TEXT NOT NULL DEFAULT ''"),
+        ("跨日", "INTEGER NOT NULL DEFAULT 0"),
+    ):
+        if 列 not in 已有列:
+            conn.execute(f"ALTER TABLE 对齐差 ADD COLUMN {列} {定义}")
+    conn.commit()
     if conn.execute("SELECT COUNT(*) AS c FROM 轨规").fetchone()["c"] == 0:
         for k, v in {
             "站名": "对拍",
